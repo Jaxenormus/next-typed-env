@@ -4,7 +4,7 @@ import { join } from "path";
 import type { ZodRawShape } from "zod";
 import { z } from "zod";
 
-import { info, error } from "./utils/log";
+import { info, error, success } from "./utils/log";
 
 const renderEnvExport = (key: string, value: (string | number)[]) =>
   `export const ${key} = process.env.${key} as ${
@@ -42,7 +42,7 @@ const validateEnv = (schema: z.AnyZodObject): Record<string, string | number> =>
           .join("\n")
       );
     } else {
-      throw error(`unable to validate enviroment variables: ${err}`);
+      throw error(`unable to validate environment variables: ${err}`);
     }
   }
 };
@@ -50,6 +50,8 @@ const validateEnv = (schema: z.AnyZodObject): Record<string, string | number> =>
 export const withTypedEnv = (nextConfig: NextConfig, schema: z.ZodObject<ZodRawShape>) => {
   info("validating environment against schema");
   const validate = validateEnv(schema);
+  success("environment validated");
+  info("generating environment files");
   const { client, server } = Object.entries(validate).reduce(
     ({ client, server }, [key, value]) => {
       const shape = schema.shape[key];
@@ -62,10 +64,10 @@ export const withTypedEnv = (nextConfig: NextConfig, schema: z.ZodObject<ZodRawS
     },
     { client: {}, server: {} }
   );
-  info("regenerating files");
   const envDir = join(process.cwd(), "./env");
   if (!existsSync(envDir)) mkdirSync(envDir, { recursive: true });
   writeEnvFile(join(envDir, "env.client.ts"), renderEnvFile(client));
   writeEnvFile(join(envDir, "env.server.ts"), renderEnvFile(server));
+  success("environment files generated");
   return nextConfig;
 };

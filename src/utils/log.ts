@@ -1,21 +1,23 @@
-const makeLogger =
-  (logger: (...args: unknown[]) => void, colorPrefix: string) =>
-  (...args: unknown[]) => {
-    logger.bind(console)(colorPrefix, "env", "-", ...args);
-  };
+import * as chalk from "chalk";
 
-export const event = makeLogger(console.info, "\x1b[35m%s\x1b[0m");
-export const warn = makeLogger(console.warn, "\x1b[33m%s\x1b[0m");
-export const error = makeLogger(console.error, "\x1b[31m%s\x1b[0m");
-export const success = makeLogger(console.info, "\x1b[32m%s\x1b[0m");
-export const info = makeLogger(console.info, "\x1b[36m%s\x1b[0m");
-
-const logger = {
-  event,
-  warn,
-  error,
-  success,
-  info,
+const prefixes = {
+  wait: "- " + chalk.cyan("wait"),
+  error: "- " + chalk.red("error"),
+  event: "- " + chalk.magenta("event"),
+  // warn: "- " + chalk.yellow("warn"),
+  // ready: "- " + chalk.green("ready"),
+  // info: "- " + chalk.cyan("info"),
+  // trace: "- " + chalk.magenta("trace"),
 };
 
-export default logger;
+export function wait(...message: any[]) {
+  console.log(prefixes.wait, ...message);
+}
+
+export function error(...message: any[]) {
+  console.error(prefixes.error, ...message);
+}
+
+export function event(...message: any[]) {
+  console.log(prefixes.event, ...message);
+}

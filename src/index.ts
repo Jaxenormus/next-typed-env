@@ -49,6 +49,7 @@ const validateEnv = (schema: z.AnyZodObject): Record<string, string | number> =>
 
 export const withTypedEnv = (nextConfig: NextConfig, schema: z.ZodObject<ZodRawShape>) => {
   wait("validating and generating environment files");
+  const timer = Date.now();
   const validate = validateEnv(schema);
   const { client, server } = Object.entries(validate).reduce(
     ({ client, server }, [key, value]) => {
@@ -66,6 +67,9 @@ export const withTypedEnv = (nextConfig: NextConfig, schema: z.ZodObject<ZodRawS
   if (!existsSync(envDir)) mkdirSync(envDir, { recursive: true });
   writeEnvFile(join(envDir, "env.client.ts"), renderEnvFile(client));
   writeEnvFile(join(envDir, "env.server.ts"), renderEnvFile(server));
-  event("generated environment files");
+  const numOfEnvVars = Object.keys(validate).length;
+
+  const ms = Date.now() - timer;
+  event(`generated environment files in ${ms}ms (${numOfEnvVars} variables)`);
   return nextConfig;
 };

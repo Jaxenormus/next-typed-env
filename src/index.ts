@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 import { join } from "path";
 import { z } from "zod";
 
+import { info, error } from "./utils/log";
+
 const renderEnvExport = (key: string, value: (string | number)[]) =>
   `export const ${key} = process.env.${key} as ${
     process.env.VERCEL !== "1" ? `${value.map((v) => `'${v}'`).join(" | ")}` : "string"
@@ -16,21 +18,36 @@ const renderEnvFile = (env: Record<string, (string | number)[]>) => {
 const writeEnvFile = (path: string, data: string) => {
   try {
     writeFileSync(path, data);
-  } catch (error) {
-    throw new Error(`Error writing file: ${error}`);
+  } catch (err) {
+    throw error(`unable to save environment file: ${path}`);
   }
 };
 
 const validateEnv = (schema: z.AnyZodObject): Record<string, string | number> => {
   try {
     return schema.parse(process.env);
-  } catch (error) {
-    const err = error as z.ZodError;
-    throw new Error(`Error validating environment variables: ${err.message}`);
+  } catch (rawErr) {
+    const err = rawErr as z.ZodError;
+    if (rawErr instanceof z.ZodError) {
+      throw error(
+        err.issues
+          .map((issue) => {
+            if (issue.message === "Required") {
+              return `${issue.path.join(".")} required in schema but missing in environment`;
+            } else {
+              return `${issue.path.join(".")} ${issue.message}`;
+            }
+          })
+          .join("\n")
+      );
+    } else {
+      throw error(`unable to validate enviroment variables: ${err}`);
+    }
   }
 };
 
 export const withTypedEnv = (nextConfig: NextConfig, schema: z.AnyZodObject) => {
+  info("validating environment against schema");
   const validate = validateEnv(schema);
   const { client, server } = Object.entries(validate).reduce(
     ({ client, server }, [key, value]) => {
@@ -44,6 +61,7 @@ export const withTypedEnv = (nextConfig: NextConfig, schema: z.AnyZodObject) => 
     },
     { client: {}, server: {} }
   );
+  info("regenerating files");
   const envDir = join(process.cwd(), "./env");
   if (!existsSync(envDir)) mkdirSync(envDir, { recursive: true });
   writeEnvFile(join(envDir, "env.client.ts"), renderEnvFile(client));

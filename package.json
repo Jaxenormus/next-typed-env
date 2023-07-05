@@ -15,8 +15,7 @@
     "test": "jest --config jestconfig.json",
     "lint": "eslint -c .eslintrc.cjs . --fix",
     "format": "prettier --config prettier.config.cjs -w src/**/* *.json *.cjs",
-    "build": "esbuild ./src/index --format=cjs --outdir=./build && yarn postbuild",
-    "postbuild": "tsc --emitDeclarationOnly --declarationDir ./build"
+    "build": "tsc"
   },
   "release": {
     "branches": [

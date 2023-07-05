@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "fs";
 import type { NextConfig } from "next";
 import { join } from "path";
+import type { ZodRawShape } from "zod";
 import { z } from "zod";
 
 import { info, error } from "./utils/log";
@@ -46,7 +47,7 @@ const validateEnv = (schema: z.AnyZodObject): Record<string, string | number> =>
   }
 };
 
-export const withTypedEnv = (nextConfig: NextConfig, schema: z.AnyZodObject) => {
+export const withTypedEnv = (nextConfig: NextConfig, schema: z.ZodObject<ZodRawShape>) => {
   info("validating environment against schema");
   const validate = validateEnv(schema);
   const { client, server } = Object.entries(validate).reduce(
